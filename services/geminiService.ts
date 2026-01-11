@@ -1,11 +1,22 @@
 import { GoogleGenAI, Type, Chat } from "@google/genai";
 import { Campaign, AiAnalysisResult, DailyPerformance } from '../types';
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Safe initialization - prevent crash if env is missing
+const apiKey = typeof process !== 'undefined' && process.env?.API_KEY ? process.env.API_KEY : 'DUMMY_KEY_FOR_INIT';
+const ai = new GoogleGenAI({ apiKey });
 
 export const analyzeCampaigns = async (campaigns: Campaign[], dailyData?: DailyPerformance[]): Promise<AiAnalysisResult> => {
-  const model = "gemini-3-flash-preview";
-  
+  if (apiKey === 'DUMMY_KEY_FOR_INIT') {
+    console.warn("Gemini Service: Skipping analysis, no API Key found.");
+    return {
+      summary: "Análisis desactivado (Falta API Key).",
+      metricHighlights: { roas: "N/A", cpl: "N/A", overallTrend: "STABLE" },
+      recommendations: []
+    };
+  }
+
+  const model = "gemini-2.0-flash-exp"; // Updated to valid model
+
   const prompt = `
     Actúa como un experto en Meta Ads y Business Intelligence (BI).
     Analiza los datos de campañas y el reporte diario "Full-Funnel" proporcionado.
@@ -26,7 +37,7 @@ export const analyzeCampaigns = async (campaigns: Campaign[], dailyData?: DailyP
 
     Datos Diarios (JSON - Muestra reciente):
     ${JSON.stringify(dailyData?.slice(-7))} 
-
+    
     Responde estrictamente en formato JSON utilizando el esquema especificado.
   `;
 
@@ -58,10 +69,10 @@ export const analyzeCampaigns = async (campaigns: Campaign[], dailyData?: DailyP
                   description: { type: Type.STRING },
                   impact: { type: Type.STRING, enum: ["HIGH", "MEDIUM", "LOW"] },
                   actionType: { type: Type.STRING, enum: ["SCALE", "KILL", "OPTIMIZE"] },
-                  relatedCampaignIds: { 
-                    type: Type.ARRAY, 
+                  relatedCampaignIds: {
+                    type: Type.ARRAY,
                     items: { type: Type.STRING },
-                    description: "Lista de IDs de campañas relacionadas" 
+                    description: "Lista de IDs de campañas relacionadas"
                   }
                 },
                 required: ["title", "description", "impact", "actionType"]
@@ -77,7 +88,7 @@ export const analyzeCampaigns = async (campaigns: Campaign[], dailyData?: DailyP
     if (!text) {
       throw new Error("No response from AI");
     }
-    
+
     return JSON.parse(text) as AiAnalysisResult;
 
   } catch (error) {
@@ -95,8 +106,8 @@ export const analyzeCampaigns = async (campaigns: Campaign[], dailyData?: DailyP
 };
 
 export const createAdvisorChat = (campaigns: Campaign[], dailyData?: DailyPerformance[]): Chat => {
-  const model = "gemini-3-flash-preview";
-  
+  const model = "gemini-2.0-flash-exp";
+
   const systemInstruction = `
     Eres "Meta Ads Advisor", un analista de datos y experto en marketing.
     
