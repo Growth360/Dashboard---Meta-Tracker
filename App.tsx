@@ -11,7 +11,7 @@ import { DataImporter } from './components/DataImporter';
 import { SchedulingEntry } from './components/SchedulingEntry';
 import { AiSummaryCard } from './components/AiSummaryCard';
 import { analyzeCampaigns } from './services/geminiService';
-import { fetchSheetData } from './services/dataService';
+import { fetchSheetData } from './services/dataService'; // Importación única
 
 const TABS = [
   { id: 'general', label: '1) Rendimiento General' },
@@ -39,15 +39,15 @@ const App: React.FC = () => {
   const [customStartDate, setCustomStartDate] = useState<string>('');
   const [customEndDate, setCustomEndDate] = useState<string>('');
 
-  // Fetch Data on Load
+  // Fetch Data on Load (Automático)
   useEffect(() => {
     const loadSheetData = async () => {
       try {
+        console.log("Iniciando carga automática desde Google Sheets...");
         const data = await fetchSheetData();
         if (data && data.length > 0) {
           setHistoricalData(data);
-          // Optional: Update campaign simulated revenue based on fresh data if needed, 
-          // or just leave historical data as the single source of truth for the dashboard charts.
+          console.log("Datos cargados correctamente:", data.length, "filas.");
         }
       } catch (error) {
         console.error("Error cargando datos de Google Sheets:", error);
