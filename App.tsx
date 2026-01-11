@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { LayoutDashboard, Settings, Search, Menu, LogOut, DollarSign, MousePointer, Target, TrendingUp, FileText, Users, Calendar, Eye, Activity, PieChart, BarChart3, UploadCloud, ClipboardList, ArrowRight } from 'lucide-react';
 import { INITIAL_CAMPAIGNS, HISTORICAL_DATA } from './constants';
 import { Campaign, CampaignStatus, DailyPerformance, AiAnalysisResult } from './types';
@@ -11,6 +11,7 @@ import { DataImporter } from './components/DataImporter';
 import { SchedulingEntry } from './components/SchedulingEntry';
 import { AiSummaryCard } from './components/AiSummaryCard';
 import { analyzeCampaigns } from './services/geminiService';
+import { fetchSheetData } from './services/dataService';
 
 const TABS = [
   { id: 'general', label: '1) Rendimiento General' },
@@ -37,6 +38,23 @@ const App: React.FC = () => {
   const [dateFilter, setDateFilter] = useState<string>('ALL');
   const [customStartDate, setCustomStartDate] = useState<string>('');
   const [customEndDate, setCustomEndDate] = useState<string>('');
+
+  // Fetch Data on Load
+  useEffect(() => {
+    const loadSheetData = async () => {
+      try {
+        const data = await fetchSheetData();
+        if (data && data.length > 0) {
+          setHistoricalData(data);
+          // Optional: Update campaign simulated revenue based on fresh data if needed, 
+          // or just leave historical data as the single source of truth for the dashboard charts.
+        }
+      } catch (error) {
+        console.error("Error cargando datos de Google Sheets:", error);
+      }
+    };
+    loadSheetData();
+  }, []);
 
   // Filter Logic
   const filteredData = useMemo(() => {
